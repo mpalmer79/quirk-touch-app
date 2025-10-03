@@ -41,6 +41,9 @@ export default function Schedule() {
   const [contactEmail, setContactEmail] = useState("");
   const [contactPhone, setContactPhone] = useState("");
 
+  // UX: prevent double-submits
+  const [submitting, setSubmitting] = useState(false);
+
   const next = () => setStep((s) => Math.min(4, s + 1));
   const back = () => setStep((s) => Math.max(1, s - 1));
 
@@ -52,6 +55,9 @@ export default function Schedule() {
 
   // Submit to Netlify function -> sends email to service advisor
   const submit = async () => {
+    if (submitting) return;
+    setSubmitting(true);
+
     const payload = {
       vehicle: { year, make, model, mileage },
       services: selectedServices,
@@ -66,14 +72,19 @@ export default function Schedule() {
         body: JSON.stringify(payload),
       });
 
-      if (!res.ok) throw new Error("Bad response");
+      if (!res.ok) {
+        const text = await res.text(); // surface server error (e.g., SendGrid reason)
+        throw new Error(text || "Bad response");
+      }
 
       alert("Request sent! A service advisor will contact you.");
       navigate("/");
-    } catch (e) {
+    } catch (e: any) {
       alert(
-        "Sorry—couldn’t send your request. Please call the service department or try again."
+        `Sorry—couldn’t send your request. Please call the service department or try again.\n\n${e?.message ?? ""}`
       );
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -280,8 +291,8 @@ export default function Schedule() {
                   <Button variant="secondary" onClick={back}>
                     Back
                   </Button>
-                  <Button onClick={submit} disabled={!contactName}>
-                    Submit Request
+                  <Button onClick={submit} disabled={!contactName || submitting}>
+                    {submitting ? "Submitting..." : "Submit Request"}
                   </Button>
                 </div>
               </div>
