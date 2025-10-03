@@ -1,9 +1,8 @@
 import sgMail from "@sendgrid/mail";
 
-sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+const { SENDGRID_API_KEY, SERVICE_TO_EMAIL, SERVICE_FROM_EMAIL } = process.env;
 
-const TO = process.env.SERVICE_TO_EMAIL;
-const FROM = process.env.SERVICE_FROM_EMAIL;
+sgMail.setApiKey(SENDGRID_API_KEY);
 
 export async function handler(event) {
   if (event.httpMethod !== "POST") {
@@ -11,6 +10,21 @@ export async function handler(event) {
   }
 
   try {
+    // Quick env check
+    if (!SENDGRID_API_KEY || !SERVICE_TO_EMAIL || !SERVICE_FROM_EMAIL) {
+      const msg = `Missing env: ${
+        [
+          !SENDGRID_API_KEY && "SENDGRID_API_KEY",
+          !SERVICE_TO_EMAIL && "SERVICE_TO_EMAIL",
+          !SERVICE_FROM_EMAIL && "SERVICE_FROM_EMAIL",
+        ]
+          .filter(Boolean)
+          .join(", ")
+      }`;
+      console.error(msg);
+      return { statusCode: 500, body: msg };
+    }
+
     const body = JSON.parse(event.body || "{}");
 
     const subject = `Service Request: ${body.vehicle?.year} ${body.vehicle?.make} ${body.vehicle?.model}`;
@@ -29,21 +43,25 @@ export async function handler(event) {
       <p>${body.appointment?.date} at ${body.appointment?.time}</p>
     `;
 
-    await sgMail.send({
-      to: TO,
-      from: FROM, // must be a verified sender/domain in SendGrid
+    const sgResp = await sgMail.send({
+      to: SERVICE_TO_EMAIL,
+      from: SERVICE_FROM_EMAIL, // must be a verified sender/domain in SendGrid
       subject,
       html,
       replyTo: body.contact?.email || undefined,
     });
 
+    console.log("SendGrid response:", sgResp[0]?.statusCode, sgResp[0]?.headers);
     return {
       statusCode: 200,
       body: JSON.stringify({ ok: true }),
       headers: { "Content-Type": "application/json" },
     };
   } catch (e) {
-    console.error(e);
-    return { statusCode: 500, body: "Email send failed" };
+    // SendGrid usually returns detailed info on e.response.body
+    const details =
+      e?.response?.body ? JSON.stringify(e.response.body) : (e?.message || "Unknown error");
+    console.error("SendGrid error:", details);
+    return { statusCode: 500, body: details };
   }
 }
