@@ -4,6 +4,7 @@ import { Calendar, ClipboardCheck, Package } from "lucide-react";
 import scheduleImage from "@/assets/schedule-service.jpg";
 import inspectionImage from "@/assets/inspection.jpg";
 import partsImage from "@/assets/parts.jpg";
+import { useNavigate } from "react-router-dom";
 
 interface ServiceCardProps {
   image: string;
@@ -11,23 +12,20 @@ interface ServiceCardProps {
   title: string;
   description: string;
   buttonText: string;
+  onClick?: () => void;
 }
 
-const ServiceCard = ({ image, icon, title, description, buttonText }: ServiceCardProps) => {
+const ServiceCard = ({ image, icon, title, description, buttonText, onClick }: ServiceCardProps) => {
   return (
     <Card className="overflow-hidden hover:shadow-lg transition-shadow">
-      <div className="relative h-48 overflow-hidden">
-        <img src={image} alt={title} className="w-full h-full object-cover" />
-      </div>
-      <CardContent className="p-6">
-        <div className="flex items-start gap-3 mb-3">
-          <div className="p-2 bg-accent/10 rounded-lg text-accent">
-            {icon}
-          </div>
-          <h3 className="text-xl font-bold leading-tight flex-1">{title}</h3>
+      <img src={image} alt={title} className="w-full h-48 object-cover" />
+      <CardContent className="p-6 space-y-4">
+        <div className="flex items-center gap-3">
+          <div className="p-2 rounded-lg bg-muted">{icon}</div>
+          <h3 className="text-xl font-semibold">{title}</h3>
         </div>
-        <p className="text-muted-foreground mb-4">{description}</p>
-        <Button variant="accent" className="w-full">
+        <p className="text-sm text-muted-foreground">{description}</p>
+        <Button variant="accent" className="w-full" onClick={onClick}>
           {buttonText}
         </Button>
       </CardContent>
@@ -36,27 +34,32 @@ const ServiceCard = ({ image, icon, title, description, buttonText }: ServiceCar
 };
 
 const ServiceCards = () => {
-  const services = [
+  const navigate = useNavigate();
+
+  const services: ServiceCardProps[] = [
     {
       image: scheduleImage,
-      icon: <Calendar className="w-5 h-5" />,
+      icon: <Calendar className="w-6 h-6" />,
       title: "SCHEDULE SERVICE",
-      description: "Schedule service and maintenance with our Certified Service experts today.",
+      description: "Book maintenance or repairs with our Certified Service experts.",
       buttonText: "SCHEDULE SERVICE",
+      onClick: () => navigate("/schedule"),
     },
     {
       image: inspectionImage,
-      icon: <ClipboardCheck className="w-5 h-5" />,
+      icon: <ClipboardCheck className="w-6 h-6" />,
       title: "MULTI-POINT VEHICLE INSPECTION",
-      description: "Our Certified Service technicians will complete a comprehensive look into your vehicle's tires, wiper blades, fluid levels, brakes, battery and more.",
+      description: "Comprehensive look into tires, wipers, fluids, brakes, battery and more.",
       buttonText: "LEARN MORE",
+      onClick: () => navigate("/appointments"),
     },
     {
       image: partsImage,
-      icon: <Package className="w-5 h-5" />,
+      icon: <Package className="w-6 h-6" />,
       title: "GM GENUINE PARTS & ACDELCO PARTS",
-      description: "At Quirk Chevrolet we're your one-stop shop for auto parts. Let us find the right part for your vehicle.",
+      description: "Order the right GM parts for your vehicle.",
       buttonText: "ORDER PARTS",
+      onClick: () => navigate("/trade"),
     },
   ];
 
